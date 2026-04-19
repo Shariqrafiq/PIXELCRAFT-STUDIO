@@ -2,39 +2,37 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#3b82f6">
-    <meta name="description" content="Professional photo and video editing suite - Free, powerful, browser-based">
-    <title>EditSuite - Professional Photo & Video Editor</title>
+    <meta name="description" content="PixelCraft Studio - Free professional photo and video editing suite. No signup required, works entirely in your browser.">
+    <meta name="keywords" content="photo editor, video editor, online editor, free editor, browser editor, pixelcraft">
+    <meta name="author" content="PixelCraft Studio">
+    <meta property="og:title" content="PixelCraft Studio - Free Photo & Video Editor">
+    <meta property="og:description" content="Professional editing suite that runs in your browser. No signup, no limits, completely free.">
+    <meta property="og:type" content="website">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>PixelCraft Studio - Free Photo & Video Editor</title>
     
-    <!-- Fonts and Icons -->
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Fabric.js for image editing -->
+    <!-- Fabric.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
     
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    
     <style>
-        /* Tailwind-like utility classes */
+        /* ============================================ */
+        /* RESET & BASE STYLES */
+        /* ============================================ */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            overflow: hidden;
-        }
-
-        /* Dark mode variables */
         :root {
             --bg-primary: #f9fafb;
             --bg-secondary: #ffffff;
@@ -45,97 +43,306 @@
             --text-tertiary: #9ca3af;
             --primary-color: #3b82f6;
             --primary-hover: #2563eb;
-            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            --primary-light: #dbeafe;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
             --hover-bg: #f3f4f6;
+            
+            /* Responsive variables */
+            --sidebar-width: 80px;
+            --sidebar-width-expanded: 280px;
+            --toolbar-height: 64px;
+            --toolbar-height-mobile: 56px;
         }
 
         .dark {
-            --bg-primary: #11111b;
+            --bg-primary: #0f0f1a;
             --bg-secondary: #181825;
             --bg-tertiary: #1e1e2e;
-            --border-color: #374151;
-            --text-primary: #f9fafb;
+            --border-color: #2d2d3d;
+            --text-primary: #f3f4f6;
             --text-secondary: #9ca3af;
             --text-tertiary: #6b7280;
             --primary-color: #3b82f6;
             --primary-hover: #60a5fa;
-            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+            --primary-light: #1e3a8a;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
             --hover-bg: #2d2d3d;
         }
 
-        /* Layout */
-        .editor-container {
-            display: flex;
-            height: 100vh;
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
             overflow: hidden;
             background: var(--bg-primary);
             color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
         }
 
-        /* Sidebar */
+        /* ============================================ */
+        /* LAYOUT STRUCTURE */
+        /* ============================================ */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            height: 100dvh; /* Dynamic viewport height for mobile */
+            width: 100vw;
+            overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        /* ============================================ */
+        /* SIDEBAR - FULLY RESPONSIVE */
+        /* ============================================ */
         .sidebar {
-            width: 80px;
+            width: var(--sidebar-width);
             background: var(--bg-secondary);
             border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            transition: width 0.3s;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 20;
+            overflow-y: auto;
+            overflow-x: hidden;
+            flex-shrink: 0;
         }
 
+        /* Expand sidebar on desktop */
         @media (min-width: 768px) {
             .sidebar {
-                width: 280px;
+                width: var(--sidebar-width-expanded);
+            }
+        }
+
+        /* Mobile sidebar overlay */
+        @media (max-width: 767px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                box-shadow: var(--shadow-lg);
+                transform: translateX(-100%);
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
             }
         }
 
         .sidebar-section {
-            padding: 16px;
+            padding: 12px;
             border-bottom: 1px solid var(--border-color);
         }
 
-        /* Toolbar */
+        @media (min-width: 768px) {
+            .sidebar-section {
+                padding: 16px;
+            }
+        }
+
+        /* ============================================ */
+        /* MAIN CONTENT AREA */
+        /* ============================================ */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 0; /* Prevents flex overflow */
+            position: relative;
+        }
+
+        /* ============================================ */
+        /* TOOLBAR - RESPONSIVE */
+        /* ============================================ */
         .toolbar {
-            height: 64px;
+            height: var(--toolbar-height-mobile);
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border-color);
-            padding: 0 16px;
+            padding: 0 12px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 10;
         }
 
-        /* Canvas Area */
+        @media (min-width: 768px) {
+            .toolbar {
+                height: var(--toolbar-height);
+                padding: 0 20px;
+            }
+        }
+
+        .toolbar-left, .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        @media (min-width: 768px) {
+            .toolbar-left, .toolbar-right {
+                gap: 16px;
+            }
+        }
+
+        /* Hamburger menu for mobile */
+        .menu-toggle {
+            display: flex;
+        }
+
+        @media (min-width: 768px) {
+            .menu-toggle {
+                display: none;
+            }
+        }
+
+        /* Logo */
+        .logo {
+            font-size: 18px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            white-space: nowrap;
+        }
+
+        @media (min-width: 768px) {
+            .logo {
+                font-size: 22px;
+            }
+        }
+
+        /* ============================================ */
+        /* CANVAS AREA - FULLY RESPONSIVE */
+        /* ============================================ */
         .canvas-area {
             flex: 1;
             overflow: auto;
-            padding: 20px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-primary);
+            position: relative;
+        }
+
+        @media (min-width: 768px) {
+            .canvas-area {
+                padding: 20px;
+            }
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            background: repeating-conic-gradient(var(--bg-tertiary) 0% 25%, var(--bg-secondary) 0% 50%) 50% / 20px 20px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            overflow: auto;
+            max-width: 100%;
+            max-height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        .canvas-container {
-            position: relative;
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+        #photo-canvas, #video-preview {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
         }
 
-        /* Buttons */
+        /* ============================================ */
+        /* EMPTY STATE */
+        /* ============================================ */
+        .empty-state {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        @media (min-width: 768px) {
+            .empty-state-icon {
+                font-size: 64px;
+                margin-bottom: 20px;
+            }
+        }
+
+        .empty-state-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        @media (min-width: 768px) {
+            .empty-state-title {
+                font-size: 20px;
+            }
+        }
+
+        .empty-state-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        @media (min-width: 768px) {
+            .empty-state-text {
+                font-size: 14px;
+            }
+        }
+
+        /* ============================================ */
+        /* BUTTONS & CONTROLS */
+        /* ============================================ */
         .btn {
-            padding: 8px 16px;
+            padding: 8px 12px;
             border-radius: 8px;
             font-weight: 500;
-            font-size: 14px;
+            font-size: 13px;
             border: none;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            gap: 6px;
             transition: all 0.2s;
             background: transparent;
             color: var(--text-primary);
+            white-space: nowrap;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        @media (min-width: 768px) {
+            .btn {
+                padding: 8px 16px;
+                font-size: 14px;
+                gap: 8px;
+            }
         }
 
         .btn:hover {
@@ -154,17 +361,35 @@
         .btn-icon {
             padding: 8px;
             border-radius: 8px;
-            width: 36px;
-            height: 36px;
+            min-width: 36px;
+            min-height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* Tool buttons */
+        @media (min-width: 768px) {
+            .btn-icon {
+                min-width: 40px;
+                min-height: 40px;
+                padding: 10px;
+            }
+        }
+
+        .btn-icon:hover {
+            background: var(--hover-bg);
+        }
+
+        /* Tool buttons in sidebar */
         .tool-btn {
             width: 100%;
-            padding: 12px;
+            padding: 10px;
             border-radius: 8px;
             display: flex;
             align-items: center;
@@ -173,38 +398,145 @@
             border: none;
             color: var(--text-primary);
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        @media (min-width: 768px) {
+            .tool-btn {
+                padding: 12px;
+                font-size: 14px;
+            }
         }
 
         .tool-btn:hover {
             background: var(--hover-bg);
         }
 
-        .tool-btn i {
-            width: 20px;
-            height: 20px;
+        .tool-btn .icon {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
         }
 
-        /* Empty state */
-        .empty-state {
-            position: absolute;
-            inset: 0;
+        @media (min-width: 768px) {
+            .tool-btn .icon {
+                font-size: 20px;
+                width: 28px;
+            }
+        }
+
+        /* Hide text on mobile sidebar */
+        @media (max-width: 767px) {
+            .tool-btn span:not(.icon) {
+                display: inline;
+            }
+            
+            .hide-mobile {
+                display: none;
+            }
+        }
+
+        /* ============================================ */
+        /* TOGGLE GROUP */
+        /* ============================================ */
+        .toggle-group {
             display: flex;
-            flex-direction: column;
+            gap: 6px;
+            background: var(--bg-tertiary);
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 8px 8px;
+            border-radius: 6px;
+            border: none;
+            background: transparent;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
             align-items: center;
             justify-content: center;
-            background: var(--bg-tertiary);
-            pointer-events: none;
+            gap: 6px;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* Progress bar */
+        @media (min-width: 768px) {
+            .toggle-btn {
+                padding: 8px 12px;
+                font-size: 13px;
+                gap: 8px;
+            }
+        }
+
+        .toggle-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* ============================================ */
+        /* ZOOM CONTROLS */
+        /* ============================================ */
+        .zoom-controls {
+            display: none;
+        }
+
+        @media (min-width: 640px) {
+            .zoom-controls {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                background: var(--bg-tertiary);
+                padding: 4px;
+                border-radius: 8px;
+            }
+        }
+
+        .zoom-level {
+            padding: 0 8px;
+            font-size: 12px;
+            font-weight: 500;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        @media (min-width: 768px) {
+            .zoom-level {
+                padding: 0 12px;
+                font-size: 13px;
+                min-width: 60px;
+            }
+        }
+
+        /* ============================================ */
+        /* PROGRESS BAR */
+        /* ============================================ */
+        .progress-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .progress-bar {
-            width: 128px;
-            height: 8px;
+            width: 80px;
+            height: 6px;
             background: var(--bg-tertiary);
-            border-radius: 4px;
+            border-radius: 3px;
             overflow: hidden;
+        }
+
+        @media (min-width: 768px) {
+            .progress-bar {
+                width: 120px;
+                height: 8px;
+                border-radius: 4px;
+            }
         }
 
         .progress-fill {
@@ -213,109 +545,71 @@
             transition: width 0.3s;
         }
 
-        /* Utility classes */
-        .flex { display: flex; }
-        .flex-col { flex-direction: column; }
-        .flex-1 { flex: 1; }
-        .items-center { align-items: center; }
-        .justify-center { justify-content: center; }
-        .justify-between { justify-content: space-between; }
-        .gap-2 { gap: 8px; }
-        .gap-3 { gap: 12px; }
-        .gap-4 { gap: 16px; }
-        .p-4 { padding: 16px; }
-        .mb-2 { margin-bottom: 8px; }
-        .mb-4 { margin-bottom: 16px; }
-        .text-sm { font-size: 14px; }
-        .text-lg { font-size: 18px; }
-        .font-bold { font-weight: 700; }
-        .font-medium { font-weight: 500; }
-        .text-secondary { color: var(--text-secondary); }
-        .text-tertiary { color: var(--text-tertiary); }
-        .hidden { display: none; }
-        
+        .progress-text {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
         @media (min-width: 768px) {
-            .md\\:inline { display: inline; }
-            .md\\:block { display: block; }
+            .progress-text {
+                font-size: 12px;
+            }
         }
 
-        /* Logo gradient */
-        .logo-gradient {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        /* ============================================ */
+        /* SECTION HEADERS */
+        /* ============================================ */
+        .section-header {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
         }
 
-        /* Toggle switch */
-        .toggle-group {
-            display: flex;
-            gap: 8px;
-            background: var(--bg-tertiary);
-            padding: 4px;
-            border-radius: 8px;
+        @media (min-width: 768px) {
+            .section-header {
+                font-size: 11px;
+                margin-bottom: 12px;
+            }
         }
 
-        .toggle-btn {
-            flex: 1;
-            padding: 8px 12px;
-            border-radius: 6px;
-            border: none;
-            background: transparent;
-            color: var(--text-primary);
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.2s;
+        /* Hide on mobile */
+        @media (max-width: 767px) {
+            .hide-on-mobile {
+                display: none;
+            }
         }
 
-        .toggle-btn.active {
-            background: var(--primary-color);
-            color: white;
-        }
-
-        /* Icon placeholder */
-        .icon {
-            width: 20px;
-            height: 20px;
-            display: inline-block;
-        }
-
-        /* Canvas styling */
-        #photo-canvas, #video-preview {
-            max-width: 100%;
-            max-height: 100%;
+        /* Show only on mobile */
+        .show-on-mobile {
             display: block;
         }
 
-        /* Responsive */
-        @media (max-width: 767px) {
-            .sidebar-section {
-                padding: 12px;
-            }
-            
-            .tool-btn span {
+        @media (min-width: 768px) {
+            .show-on-mobile {
                 display: none;
-            }
-            
-            .tool-btn {
-                justify-content: center;
-                padding: 12px 0;
             }
         }
 
-        /* Scrollbar */
+        /* ============================================ */
+        /* SCROLLBAR STYLING */
+        /* ============================================ */
         ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
+        }
+
+        @media (min-width: 768px) {
+            ::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+            }
         }
 
         ::-webkit-scrollbar-track {
-            background: var(--bg-tertiary);
+            background: transparent;
         }
 
         ::-webkit-scrollbar-thumb {
@@ -323,45 +617,106 @@
             border-radius: 4px;
         }
 
-        /* Loading animation */
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
         }
 
-        .loading {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        /* ============================================ */
+        /* UTILITY CLASSES */
+        /* ============================================ */
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .flex-1 { flex: 1; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-1 { gap: 4px; }
+        .gap-2 { gap: 8px; }
+        .gap-3 { gap: 12px; }
+        .gap-4 { gap: 16px; }
+        .w-full { width: 100%; }
+        .h-full { height: 100%; }
+        .relative { position: relative; }
+        .absolute { position: absolute; }
+        .overflow-hidden { overflow: hidden; }
+        .overflow-auto { overflow: auto; }
+
+        /* ============================================ */
+        /* MOBILE OVERLAY */
+        /* ============================================ */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 15;
+            backdrop-filter: blur(2px);
         }
 
-        /* Drag & drop zone */
-        .drop-zone {
-            border: 2px dashed var(--border-color);
-            border-radius: 8px;
-            padding: 40px;
-            text-align: center;
-            transition: all 0.2s;
+        @media (max-width: 767px) {
+            .sidebar-overlay.active {
+                display: block;
+            }
         }
 
-        .drop-zone.drag-over {
-            border-color: var(--primary-color);
-            background: rgba(59, 130, 246, 0.1);
+        /* ============================================ */
+        /* ANIMATIONS */
+        /* ============================================ */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* ============================================ */
+        /* SAFE AREA FOR NOTCHED DEVICES */
+        /* ============================================ */
+        @supports (padding: max(0px)) {
+            .sidebar {
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+            
+            .toolbar {
+                padding-top: env(safe-area-inset-top);
+            }
+            
+            .canvas-area {
+                padding-bottom: env(safe-area-inset-bottom);
+            }
         }
     </style>
 </head>
 <body>
-    <div class="editor-container">
+    <div class="app-container">
+        <!-- Mobile Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
         <!-- Sidebar -->
-        <aside class="sidebar">
-            <!-- Editor Type Toggle -->
+        <aside class="sidebar" id="sidebar">
+            <!-- Editor Mode Toggle -->
             <div class="sidebar-section">
                 <div class="toggle-group">
                     <button id="photoModeBtn" class="toggle-btn active">
                         <span class="icon">📷</span>
-                        <span class="md:inline">Photo</span>
+                        <span>Photo</span>
                     </button>
                     <button id="videoModeBtn" class="toggle-btn">
                         <span class="icon">🎬</span>
-                        <span class="md:inline">Video</span>
+                        <span>Video</span>
                     </button>
                 </div>
             </div>
@@ -369,24 +724,20 @@
             <!-- Tools Section -->
             <div style="flex: 1; overflow-y: auto;">
                 <div class="sidebar-section">
-                    <h3 style="font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;" class="md:block hidden">
-                        Tools
-                    </h3>
-                    <div id="toolsContainer" style="display: flex; flex-direction: column; gap: 4px;">
-                        <!-- Tools will be dynamically inserted here -->
+                    <h3 class="section-header hide-on-mobile">Tools</h3>
+                    <div id="toolsContainer" style="display: flex; flex-direction: column; gap: 2px;">
+                        <!-- Tools rendered dynamically -->
                     </div>
                 </div>
 
                 <!-- History Section -->
                 <div class="sidebar-section">
-                    <h3 style="font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;" class="md:block hidden">
-                        History
-                    </h3>
+                    <h3 class="section-header hide-on-mobile">History</h3>
                     <div class="flex gap-2">
-                        <button class="btn-icon" id="undoBtn" title="Undo">
+                        <button class="btn-icon" id="undoBtn" title="Undo (Ctrl+Z)">
                             <span class="icon">↩️</span>
                         </button>
-                        <button class="btn-icon" id="redoBtn" title="Redo">
+                        <button class="btn-icon" id="redoBtn" title="Redo (Ctrl+Y)">
                             <span class="icon">↪️</span>
                         </button>
                     </div>
@@ -395,9 +746,9 @@
 
             <!-- Bottom Actions -->
             <div class="sidebar-section">
-                <button class="btn btn-primary" style="width: 100%; justify-content: center;" id="exportBtn">
+                <button class="btn btn-primary w-full" id="exportBtn">
                     <span class="icon">⬇️</span>
-                    <span class="md:inline">Export</span>
+                    <span>Export</span>
                 </button>
             </div>
 
@@ -405,23 +756,29 @@
             <div class="sidebar-section" style="border-top: 1px solid var(--border-color);">
                 <button class="tool-btn" id="themeToggleBtn">
                     <span class="icon">🌙</span>
-                    <span class="md:inline" id="themeText">Dark Mode</span>
+                    <span id="themeText">Dark Mode</span>
                 </button>
             </div>
         </aside>
 
         <!-- Main Content -->
-        <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+        <div class="main-content">
             <!-- Toolbar -->
             <header class="toolbar">
-                <div class="flex items-center gap-4">
-                    <h1 class="logo-gradient" style="font-size: 24px; font-weight: bold;">EditSuite</h1>
+                <div class="toolbar-left">
+                    <!-- Mobile Menu Toggle -->
+                    <button class="btn-icon menu-toggle" id="menuToggle">
+                        <span class="icon">☰</span>
+                    </button>
                     
-                    <div class="flex items-center gap-2" id="zoomControls">
+                    <h1 class="logo">PixelCraft Studio</h1>
+                    
+                    <!-- Zoom Controls -->
+                    <div class="zoom-controls">
                         <button class="btn-icon" id="zoomOutBtn" title="Zoom Out">
                             <span class="icon">🔍−</span>
                         </button>
-                        <span style="padding: 0 12px; font-size: 14px; font-weight: 500;" id="zoomLevel">100%</span>
+                        <span class="zoom-level" id="zoomLevel">100%</span>
                         <button class="btn-icon" id="zoomInBtn" title="Zoom In">
                             <span class="icon">🔍+</span>
                         </button>
@@ -431,8 +788,9 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-4">
-                    <div id="videoControls" style="display: none;" class="flex items-center gap-2">
+                <div class="toolbar-right">
+                    <!-- Video Controls -->
+                    <div id="videoControls" style="display: none;" class="flex gap-1">
                         <button class="btn-icon" id="playBtn" title="Play">
                             <span class="icon">▶️</span>
                         </button>
@@ -441,33 +799,30 @@
                         </button>
                     </div>
                     
-                    <div id="progressContainer" style="display: none;" class="flex items-center gap-2">
+                    <!-- Progress -->
+                    <div id="progressContainer" style="display: none;" class="progress-container">
                         <div class="progress-bar">
                             <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
                         </div>
-                        <span class="text-sm text-secondary" id="progressText">0%</span>
+                        <span class="progress-text" id="progressText">0%</span>
                     </div>
                 </div>
             </header>
 
             <!-- Canvas Area -->
             <main class="canvas-area" id="canvasArea">
-                <div class="canvas-container" id="canvasContainer">
+                <div class="canvas-wrapper" id="canvasWrapper">
                     <!-- Photo Canvas -->
-                    <canvas id="photo-canvas" width="800" height="600"></canvas>
+                    <canvas id="photo-canvas"></canvas>
                     
                     <!-- Video Preview -->
-                    <video id="video-preview" width="800" height="600" controls style="display: none;"></video>
+                    <video id="video-preview" style="display: none;"></video>
                     
                     <!-- Empty State -->
                     <div class="empty-state" id="emptyState">
-                        <span style="font-size: 48px; margin-bottom: 16px;">📁</span>
-                        <p style="font-size: 18px; margin-bottom: 8px; color: var(--text-primary);">
-                            Drag & drop a file here
-                        </p>
-                        <p style="font-size: 14px; color: var(--text-secondary);">
-                            or click upload in the sidebar
-                        </p>
+                        <div class="empty-state-icon">📁</div>
+                        <div class="empty-state-title">Drop your file here</div>
+                        <div class="empty-state-text">or tap upload in the menu</div>
                     </div>
                 </div>
             </main>
@@ -480,7 +835,7 @@
 
     <script>
         // ============================================
-        // EDITSUITE - Complete Photo & Video Editor
+        // PIXELCRAFT STUDIO - FULLY RESPONSIVE EDITOR
         // ============================================
 
         (function() {
@@ -488,7 +843,7 @@
 
             // ========== STATE MANAGEMENT ==========
             const state = {
-                activeEditor: 'photo', // 'photo' or 'video'
+                activeEditor: 'photo',
                 isDarkMode: localStorage.getItem('darkMode') === 'true' || 
                             window.matchMedia('(prefers-color-scheme: dark)').matches,
                 currentImage: null,
@@ -498,7 +853,8 @@
                 isProcessing: false,
                 progress: 0,
                 history: [],
-                historyIndex: -1
+                historyIndex: -1,
+                isSidebarOpen: false
             };
 
             // ========== DOM ELEMENTS ==========
@@ -506,6 +862,7 @@
                 photoCanvas: document.getElementById('photo-canvas'),
                 videoPreview: document.getElementById('video-preview'),
                 emptyState: document.getElementById('emptyState'),
+                canvasWrapper: document.getElementById('canvasWrapper'),
                 photoModeBtn: document.getElementById('photoModeBtn'),
                 videoModeBtn: document.getElementById('videoModeBtn'),
                 toolsContainer: document.getElementById('toolsContainer'),
@@ -525,7 +882,9 @@
                 progressFill: document.getElementById('progressFill'),
                 progressText: document.getElementById('progressText'),
                 canvasArea: document.getElementById('canvasArea'),
-                canvasContainer: document.getElementById('canvasContainer')
+                sidebar: document.getElementById('sidebar'),
+                menuToggle: document.getElementById('menuToggle'),
+                sidebarOverlay: document.getElementById('sidebarOverlay')
             };
 
             // ========== TOOL DEFINITIONS ==========
@@ -555,14 +914,13 @@
                     elements.themeText.textContent = 'Light Mode';
                 }
 
-                // Initialize Fabric.js canvas
-                state.fabricCanvas = new fabric.Canvas('photo-canvas', {
-                    width: 800,
-                    height: 600,
-                    backgroundColor: 'transparent'
-                });
+                // Set canvas dimensions based on container
+                resizeCanvas();
+                
+                // Initialize Fabric.js
+                initFabricCanvas();
 
-                // Set up event listeners
+                // Setup event listeners
                 setupEventListeners();
                 
                 // Render tools
@@ -570,10 +928,68 @@
                 
                 // Save initial state
                 saveHistory();
+
+                // Handle window resize
+                window.addEventListener('resize', debounce(handleResize, 100));
+            }
+
+            function initFabricCanvas() {
+                const containerWidth = elements.canvasWrapper.clientWidth - 40 || 800;
+                const containerHeight = elements.canvasWrapper.clientHeight - 40 || 600;
+                
+                state.fabricCanvas = new fabric.Canvas('photo-canvas', {
+                    width: Math.min(containerWidth, 1200),
+                    height: Math.min(containerHeight, 800),
+                    backgroundColor: 'transparent'
+                });
+            }
+
+            function resizeCanvas() {
+                if (!state.fabricCanvas) return;
+                
+                const containerWidth = elements.canvasWrapper.clientWidth - 40;
+                const containerHeight = elements.canvasWrapper.clientHeight - 40;
+                
+                if (containerWidth > 0 && containerHeight > 0) {
+                    state.fabricCanvas.setDimensions({
+                        width: Math.min(containerWidth, 1200),
+                        height: Math.min(containerHeight, 800)
+                    });
+                    state.fabricCanvas.renderAll();
+                }
+            }
+
+            function handleResize() {
+                resizeCanvas();
+                fitToScreen();
+            }
+
+            // ========== MOBILE SIDEBAR ==========
+            function toggleSidebar() {
+                state.isSidebarOpen = !state.isSidebarOpen;
+                elements.sidebar.classList.toggle('open', state.isSidebarOpen);
+                elements.sidebarOverlay.classList.toggle('active', state.isSidebarOpen);
+            }
+
+            function closeSidebar() {
+                state.isSidebarOpen = false;
+                elements.sidebar.classList.remove('open');
+                elements.sidebarOverlay.classList.remove('active');
             }
 
             // ========== EVENT LISTENERS ==========
             function setupEventListeners() {
+                // Mobile menu
+                elements.menuToggle.addEventListener('click', toggleSidebar);
+                elements.sidebarOverlay.addEventListener('click', closeSidebar);
+                
+                // Close sidebar when tool is clicked on mobile
+                elements.toolsContainer.addEventListener('click', (e) => {
+                    if (e.target.closest('.tool-btn') && window.innerWidth < 768) {
+                        closeSidebar();
+                    }
+                });
+
                 // Editor mode toggle
                 elements.photoModeBtn.addEventListener('click', () => switchEditor('photo'));
                 elements.videoModeBtn.addEventListener('click', () => switchEditor('video'));
@@ -587,6 +1003,7 @@
 
                 // Drag and drop
                 elements.canvasArea.addEventListener('dragover', handleDragOver);
+                elements.canvasArea.addEventListener('dragleave', handleDragLeave);
                 elements.canvasArea.addEventListener('drop', handleDrop);
 
                 // Zoom controls
@@ -602,31 +1019,53 @@
                 elements.exportBtn.addEventListener('click', exportContent);
 
                 // Video controls
-                elements.playBtn?.addEventListener('click', () => elements.videoPreview.play());
-                elements.pauseBtn?.addEventListener('click', () => elements.videoPreview.pause());
+                if (elements.playBtn) {
+                    elements.playBtn.addEventListener('click', () => elements.videoPreview.play());
+                    elements.pauseBtn.addEventListener('click', () => elements.videoPreview.pause());
+                }
 
                 // Keyboard shortcuts
                 document.addEventListener('keydown', handleKeyboard);
+                
+                // Touch events for mobile
+                setupTouchEvents();
+            }
+
+            function setupTouchEvents() {
+                let touchStartX = 0;
+                
+                elements.canvasArea.addEventListener('touchstart', (e) => {
+                    touchStartX = e.touches[0].clientX;
+                });
+                
+                // Swipe to open sidebar
+                elements.canvasArea.addEventListener('touchmove', (e) => {
+                    const touchX = e.touches[0].clientX;
+                    const diff = touchX - touchStartX;
+                    
+                    if (diff > 50 && !state.isSidebarOpen && window.innerWidth < 768) {
+                        toggleSidebar();
+                    }
+                });
             }
 
             // ========== EDITOR SWITCHING ==========
             function switchEditor(mode) {
                 state.activeEditor = mode;
                 
-                // Update UI
                 elements.photoModeBtn.classList.toggle('active', mode === 'photo');
                 elements.videoModeBtn.classList.toggle('active', mode === 'video');
                 
-                // Show/hide appropriate canvas
                 elements.photoCanvas.style.display = mode === 'photo' ? 'block' : 'none';
                 elements.videoPreview.style.display = mode === 'video' ? 'block' : 'none';
                 elements.videoControls.style.display = mode === 'video' ? 'flex' : 'none';
                 
-                // Update empty state
                 updateEmptyState();
-                
-                // Render appropriate tools
                 renderTools();
+                
+                if (mode === 'photo' && state.fabricCanvas) {
+                    setTimeout(() => state.fabricCanvas.renderAll(), 50);
+                }
             }
 
             // ========== TOOL RENDERING ==========
@@ -636,11 +1075,10 @@
                 elements.toolsContainer.innerHTML = tools.map(tool => `
                     <button class="tool-btn" data-action="${tool.action}">
                         <span class="icon">${tool.icon}</span>
-                        <span class="md:inline">${tool.label}</span>
+                        <span>${tool.label}</span>
                     </button>
                 `).join('');
                 
-                // Add click handlers
                 elements.toolsContainer.querySelectorAll('.tool-btn').forEach(btn => {
                     btn.addEventListener('click', () => handleToolAction(btn.dataset.action));
                 });
@@ -657,35 +1095,13 @@
                         }
                         break;
                     case 'crop':
-                        if (state.fabricCanvas) {
-                            const activeObject = state.fabricCanvas.getActiveObject();
-                            if (activeObject) {
-                                // Enable crop mode
-                                state.fabricCanvas.setActiveObject(activeObject);
-                            } else {
-                                alert('Select an object to crop');
-                            }
-                        }
+                        alert('Select an object to crop (Crop tool coming in Phase 2)');
                         break;
                     case 'rotate':
-                        if (state.fabricCanvas) {
-                            const activeObject = state.fabricCanvas.getActiveObject();
-                            if (activeObject) {
-                                activeObject.rotate(activeObject.angle + 15);
-                                state.fabricCanvas.renderAll();
-                                saveHistory();
-                            }
-                        }
+                        rotateObject();
                         break;
                     case 'flip':
-                        if (state.fabricCanvas) {
-                            const activeObject = state.fabricCanvas.getActiveObject();
-                            if (activeObject) {
-                                activeObject.toggle('flipX');
-                                state.fabricCanvas.renderAll();
-                                saveHistory();
-                            }
-                        }
+                        flipObject();
                         break;
                     case 'text':
                         addText();
@@ -698,30 +1114,52 @@
                 }
             }
 
+            function rotateObject() {
+                if (!state.fabricCanvas) return;
+                const activeObject = state.fabricCanvas.getActiveObject();
+                if (activeObject) {
+                    activeObject.rotate(activeObject.angle + 15);
+                    state.fabricCanvas.renderAll();
+                    saveHistory();
+                }
+            }
+
+            function flipObject() {
+                if (!state.fabricCanvas) return;
+                const activeObject = state.fabricCanvas.getActiveObject();
+                if (activeObject) {
+                    activeObject.toggle('flipX');
+                    state.fabricCanvas.renderAll();
+                    saveHistory();
+                }
+            }
+
             // ========== PHOTO UPLOAD ==========
             function handlePhotoUpload(e) {
                 const file = e.target.files[0];
                 if (file && file.type.startsWith('image/')) {
                     const reader = new FileReader();
-                    reader.onload = (event) => {
-                        loadImageToCanvas(event.target.result);
-                    };
+                    reader.onload = (event) => loadImageToCanvas(event.target.result);
                     reader.readAsDataURL(file);
                 }
+                elements.photoInput.value = '';
             }
 
             function loadImageToCanvas(imageUrl) {
                 fabric.Image.fromURL(imageUrl, (img) => {
-                    // Scale image to fit canvas
+                    const canvasWidth = state.fabricCanvas.width;
+                    const canvasHeight = state.fabricCanvas.height;
+                    
                     const scale = Math.min(
-                        (state.fabricCanvas.width - 40) / img.width,
-                        (state.fabricCanvas.height - 40) / img.height
+                        (canvasWidth - 40) / img.width,
+                        (canvasHeight - 40) / img.height,
+                        1
                     );
                     
                     img.scale(scale);
                     img.set({
-                        left: state.fabricCanvas.width / 2,
-                        top: state.fabricCanvas.height / 2,
+                        left: canvasWidth / 2,
+                        top: canvasHeight / 2,
                         originX: 'center',
                         originY: 'center'
                     });
@@ -746,6 +1184,7 @@
                     state.currentVideo = url;
                     updateEmptyState();
                 }
+                elements.videoInput.value = '';
             }
 
             // ========== TEXT TOOL ==========
@@ -755,9 +1194,9 @@
                 const text = new fabric.IText('Edit this text', {
                     left: state.fabricCanvas.width / 2,
                     top: state.fabricCanvas.height / 2,
-                    fontFamily: 'Inter',
+                    fontFamily: 'Inter, sans-serif',
                     fill: state.isDarkMode ? '#ffffff' : '#000000',
-                    fontSize: 40,
+                    fontSize: Math.min(40, state.fabricCanvas.width / 20),
                     originX: 'center',
                     originY: 'center'
                 });
@@ -773,14 +1212,16 @@
                 if (!state.fabricCanvas) return;
                 
                 const activeObject = state.fabricCanvas.getActiveObject();
-                if (!activeObject) return;
+                if (!activeObject) {
+                    alert('Select an object to apply filter');
+                    return;
+                }
                 
-                // Simple grayscale filter as example
+                const filter = new fabric.Image.filters.Grayscale();
                 if (activeObject.filters) {
-                    const filter = new fabric.Image.filters.Grayscale();
                     activeObject.filters.push(filter);
                 } else {
-                    activeObject.filters = [new fabric.Image.filters.Grayscale()];
+                    activeObject.filters = [filter];
                 }
                 
                 activeObject.applyFilters();
@@ -791,12 +1232,17 @@
             // ========== DRAG & DROP ==========
             function handleDragOver(e) {
                 e.preventDefault();
-                elements.canvasArea.classList.add('drag-over');
+                elements.canvasArea.style.background = 'var(--primary-light)';
+            }
+
+            function handleDragLeave(e) {
+                e.preventDefault();
+                elements.canvasArea.style.background = '';
             }
 
             function handleDrop(e) {
                 e.preventDefault();
-                elements.canvasArea.classList.remove('drag-over');
+                elements.canvasArea.style.background = '';
                 
                 const file = e.dataTransfer.files[0];
                 if (!file) return;
@@ -816,9 +1262,9 @@
             // ========== ZOOM ==========
             function zoom(factor) {
                 if (state.activeEditor === 'photo' && state.fabricCanvas) {
-                    const zoom = state.fabricCanvas.getZoom() * factor;
-                    state.fabricCanvas.setZoom(zoom);
-                    state.zoomLevel = Math.round(zoom * 100);
+                    const newZoom = state.fabricCanvas.getZoom() * factor;
+                    state.fabricCanvas.setZoom(newZoom);
+                    state.zoomLevel = Math.round(newZoom * 100);
                     elements.zoomLevel.textContent = state.zoomLevel + '%';
                 }
             }
@@ -828,21 +1274,19 @@
                     state.fabricCanvas.setZoom(1);
                     state.zoomLevel = 100;
                     elements.zoomLevel.textContent = '100%';
+                    state.fabricCanvas.renderAll();
                 }
             }
 
-            // ========== HISTORY (UNDO/REDO) ==========
+            // ========== HISTORY ==========
             function saveHistory() {
                 if (!state.fabricCanvas) return;
                 
                 const canvasState = JSON.stringify(state.fabricCanvas.toJSON());
-                
-                // Remove any states after current index
                 state.history = state.history.slice(0, state.historyIndex + 1);
                 state.history.push(canvasState);
                 state.historyIndex++;
                 
-                // Limit history size
                 if (state.history.length > 50) {
                     state.history.shift();
                     state.historyIndex--;
@@ -880,18 +1324,22 @@
             // ========== EXPORT ==========
             function exportContent() {
                 if (state.activeEditor === 'photo' && state.currentImage) {
-                    // Export as PNG
                     const dataURL = state.fabricCanvas.toDataURL({
                         format: 'png',
                         quality: 1
                     });
                     
                     const link = document.createElement('a');
-                    link.download = 'edited-image.png';
+                    link.download = 'pixelcraft-image.png';
                     link.href = dataURL;
                     link.click();
+                    
+                    // Close sidebar on mobile after export
+                    if (window.innerWidth < 768) {
+                        closeSidebar();
+                    }
                 } else if (state.activeEditor === 'video' && state.currentVideo) {
-                    alert('Video export requires FFmpeg.wasm integration (Phase 5)');
+                    alert('Video export coming in Phase 5 with FFmpeg.wasm integration');
                 } else {
                     alert('No content to export');
                 }
@@ -905,27 +1353,23 @@
                 localStorage.setItem('darkMode', state.isDarkMode);
             }
 
-            // ========== KEYBOARD SHORTCUTS ==========
+            // ========== KEYBOARD ==========
             function handleKeyboard(e) {
-                // Ctrl/Cmd + Z: Undo
                 if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
                     e.preventDefault();
                     undo();
                 }
                 
-                // Ctrl/Cmd + Shift + Z: Redo
                 if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) {
                     e.preventDefault();
                     redo();
                 }
                 
-                // Ctrl/Cmd + Y: Redo (alternative)
                 if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
                     e.preventDefault();
                     redo();
                 }
                 
-                // Delete key: Remove selected object
                 if (e.key === 'Delete' && state.fabricCanvas) {
                     const activeObject = state.fabricCanvas.getActiveObject();
                     if (activeObject) {
@@ -936,37 +1380,30 @@
                 }
             }
 
-            // ========== UTILITY FUNCTIONS ==========
+            // ========== UTILITIES ==========
             function updateEmptyState() {
                 const hasContent = state.activeEditor === 'photo' ? 
                     state.currentImage : state.currentVideo;
                 elements.emptyState.style.display = hasContent ? 'none' : 'flex';
             }
 
-            function showProgress(show) {
-                state.isProcessing = show;
-                elements.progressContainer.style.display = show ? 'flex' : 'none';
+            function debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
             }
 
-            function updateProgress(value) {
-                state.progress = value;
-                elements.progressFill.style.width = value + '%';
-                elements.progressText.textContent = value + '%';
-            }
-
-            // ========== START THE APP ==========
+            // ========== START ==========
             init();
             
-            // Export to window for debugging
-            window.editorState = state;
-            window.editorElements = elements;
-            
-            console.log('✅ EditSuite initialized successfully!');
-            console.log('💡 Tips:');
-            console.log('  - Drag & drop images/videos');
-            console.log('  - Use Ctrl+Z for undo');
-            console.log('  - Toggle dark/light mode');
-            console.log('  - Click on objects to select and edit');
+            console.log('✅ PixelCraft Studio - Fully Responsive Editor');
+            console.log('📱 Mobile-ready | 🌓 Dark mode | ⌨️ Keyboard shortcuts');
             
         })();
     </script>
