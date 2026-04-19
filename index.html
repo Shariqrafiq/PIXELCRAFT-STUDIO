@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="description" content="Professional photo and video editing suite - Free, powerful, browser-based">
+    <title>EditSuite - Professional Photo & Video Editor</title>
+    
+    <!-- Fonts and Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Fabric.js for image editing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        /* Tailwind-like utility classes */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow: hidden;
+        }
+
+        /* Dark mode variables */
+        :root {
+            --bg-primary: #f9fafb;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f3f4f6;
+            --border-color: #e5e7eb;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --text-tertiary: #9ca3af;
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            --hover-bg: #f3f4f6;
+        }
+
+        .dark {
+            --bg-primary: #11111b;
+            --bg-secondary: #181825;
+            --bg-tertiary: #1e1e2e;
+            --border-color: #374151;
+            --text-primary: #f9fafb;
+            --text-secondary: #9ca3af;
+            --text-tertiary: #6b7280;
+            --primary-color: #3b82f6;
+            --primary-hover: #60a5fa;
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+            --hover-bg: #2d2d3d;
+        }
+
+        /* Layout */
+        .editor-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 80px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s;
+        }
+
+        @media (min-width: 768px) {
+            .sidebar {
+                width: 280px;
+            }
+        }
+
+        .sidebar-section {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Toolbar */
+        .toolbar {
+            height: 64px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Canvas Area */
+        .canvas-area {
+            flex: 1;
+            overflow: auto;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .canvas-container {
+            position: relative;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            background: transparent;
+            color: var(--text-primary);
+        }
+
+        .btn:hover {
+            background: var(--hover-bg);
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-icon {
+            padding: 8px;
+            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Tool buttons */
+        .tool-btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .tool-btn:hover {
+            background: var(--hover-bg);
+        }
+
+        .tool-btn i {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Empty state */
+        .empty-state {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-tertiary);
+            pointer-events: none;
+        }
+
+        /* Progress bar */
+        .progress-bar {
+            width: 128px;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary-color);
+            transition: width 0.3s;
+        }
+
+        /* Utility classes */
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .flex-1 { flex: 1; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-2 { gap: 8px; }
+        .gap-3 { gap: 12px; }
+        .gap-4 { gap: 16px; }
+        .p-4 { padding: 16px; }
+        .mb-2 { margin-bottom: 8px; }
+        .mb-4 { margin-bottom: 16px; }
+        .text-sm { font-size: 14px; }
+        .text-lg { font-size: 18px; }
+        .font-bold { font-weight: 700; }
+        .font-medium { font-weight: 500; }
+        .text-secondary { color: var(--text-secondary); }
+        .text-tertiary { color: var(--text-tertiary); }
+        .hidden { display: none; }
+        
+        @media (min-width: 768px) {
+            .md\\:inline { display: inline; }
+            .md\\:block { display: block; }
+        }
+
+        /* Logo gradient */
+        .logo-gradient {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Toggle switch */
+        .toggle-group {
+            display: flex;
+            gap: 8px;
+            background: var(--bg-tertiary);
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: none;
+            background: transparent;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .toggle-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Icon placeholder */
+        .icon {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+        }
+
+        /* Canvas styling */
+        #photo-canvas, #video-preview {
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 767px) {
+            .sidebar-section {
+                padding: 12px;
+            }
+            
+            .tool-btn span {
+                display: none;
+            }
+            
+            .tool-btn {
+                justify-content: center;
+                padding: 12px 0;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--text-tertiary);
+            border-radius: 4px;
+        }
+
+        /* Loading animation */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .loading {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Drag & drop zone */
+        .drop-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .drop-zone.drag-over {
+            border-color: var(--primary-color);
+            background: rgba(59, 130, 246, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="editor-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <!-- Editor Type Toggle -->
+            <div class="sidebar-section">
+                <div class="toggle-group">
+                    <button id="photoModeBtn" class="toggle-btn active">
+                        <span class="icon">📷</span>
+                        <span class="md:inline">Photo</span>
+                    </button>
+                    <button id="videoModeBtn" class="toggle-btn">
+                        <span class="icon">🎬</span>
+                        <span class="md:inline">Video</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tools Section -->
+            <div style="flex: 1; overflow-y: auto;">
+                <div class="sidebar-section">
+                    <h3 style="font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;" class="md:block hidden">
+                        Tools
+                    </h3>
+                    <div id="toolsContainer" style="display: flex; flex-direction: column; gap: 4px;">
+                        <!-- Tools will be dynamically inserted here -->
+                    </div>
+                </div>
+
+                <!-- History Section -->
+                <div class="sidebar-section">
+                    <h3 style="font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;" class="md:block hidden">
+                        History
+                    </h3>
+                    <div class="flex gap-2">
+                        <button class="btn-icon" id="undoBtn" title="Undo">
+                            <span class="icon">↩️</span>
+                        </button>
+                        <button class="btn-icon" id="redoBtn" title="Redo">
+                            <span class="icon">↪️</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Actions -->
+            <div class="sidebar-section">
+                <button class="btn btn-primary" style="width: 100%; justify-content: center;" id="exportBtn">
+                    <span class="icon">⬇️</span>
+                    <span class="md:inline">Export</span>
+                </button>
+            </div>
+
+            <!-- Theme Toggle -->
+            <div class="sidebar-section" style="border-top: 1px solid var(--border-color);">
+                <button class="tool-btn" id="themeToggleBtn">
+                    <span class="icon">🌙</span>
+                    <span class="md:inline" id="themeText">Dark Mode</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+            <!-- Toolbar -->
+            <header class="toolbar">
+                <div class="flex items-center gap-4">
+                    <h1 class="logo-gradient" style="font-size: 24px; font-weight: bold;">EditSuite</h1>
+                    
+                    <div class="flex items-center gap-2" id="zoomControls">
+                        <button class="btn-icon" id="zoomOutBtn" title="Zoom Out">
+                            <span class="icon">🔍−</span>
+                        </button>
+                        <span style="padding: 0 12px; font-size: 14px; font-weight: 500;" id="zoomLevel">100%</span>
+                        <button class="btn-icon" id="zoomInBtn" title="Zoom In">
+                            <span class="icon">🔍+</span>
+                        </button>
+                        <button class="btn-icon" id="fitScreenBtn" title="Fit to Screen">
+                            <span class="icon">⬜</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <div id="videoControls" style="display: none;" class="flex items-center gap-2">
+                        <button class="btn-icon" id="playBtn" title="Play">
+                            <span class="icon">▶️</span>
+                        </button>
+                        <button class="btn-icon" id="pauseBtn" title="Pause">
+                            <span class="icon">⏸️</span>
+                        </button>
+                    </div>
+                    
+                    <div id="progressContainer" style="display: none;" class="flex items-center gap-2">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+                        </div>
+                        <span class="text-sm text-secondary" id="progressText">0%</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Canvas Area -->
+            <main class="canvas-area" id="canvasArea">
+                <div class="canvas-container" id="canvasContainer">
+                    <!-- Photo Canvas -->
+                    <canvas id="photo-canvas" width="800" height="600"></canvas>
+                    
+                    <!-- Video Preview -->
+                    <video id="video-preview" width="800" height="600" controls style="display: none;"></video>
+                    
+                    <!-- Empty State -->
+                    <div class="empty-state" id="emptyState">
+                        <span style="font-size: 48px; margin-bottom: 16px;">📁</span>
+                        <p style="font-size: 18px; margin-bottom: 8px; color: var(--text-primary);">
+                            Drag & drop a file here
+                        </p>
+                        <p style="font-size: 14px; color: var(--text-secondary);">
+                            or click upload in the sidebar
+                        </p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Hidden File Inputs -->
+    <input type="file" id="photoInput" accept="image/*" style="display: none;">
+    <input type="file" id="videoInput" accept="video/*" style="display: none;">
+
+    <script>
+        // ============================================
+        // EDITSUITE - Complete Photo & Video Editor
+        // ============================================
+
+        (function() {
+            'use strict';
+
+            // ========== STATE MANAGEMENT ==========
+            const state = {
+                activeEditor: 'photo', // 'photo' or 'video'
+                isDarkMode: localStorage.getItem('darkMode') === 'true' || 
+                            window.matchMedia('(prefers-color-scheme: dark)').matches,
+                currentImage: null,
+                currentVideo: null,
+                fabricCanvas: null,
+                zoomLevel: 100,
+                isProcessing: false,
+                progress: 0,
+                history: [],
+                historyIndex: -1
+            };
+
+            // ========== DOM ELEMENTS ==========
+            const elements = {
+                photoCanvas: document.getElementById('photo-canvas'),
+                videoPreview: document.getElementById('video-preview'),
+                emptyState: document.getElementById('emptyState'),
+                photoModeBtn: document.getElementById('photoModeBtn'),
+                videoModeBtn: document.getElementById('videoModeBtn'),
+                toolsContainer: document.getElementById('toolsContainer'),
+                zoomInBtn: document.getElementById('zoomInBtn'),
+                zoomOutBtn: document.getElementById('zoomOutBtn'),
+                fitScreenBtn: document.getElementById('fitScreenBtn'),
+                zoomLevel: document.getElementById('zoomLevel'),
+                undoBtn: document.getElementById('undoBtn'),
+                redoBtn: document.getElementById('redoBtn'),
+                exportBtn: document.getElementById('exportBtn'),
+                themeToggleBtn: document.getElementById('themeToggleBtn'),
+                themeText: document.getElementById('themeText'),
+                photoInput: document.getElementById('photoInput'),
+                videoInput: document.getElementById('videoInput'),
+                videoControls: document.getElementById('videoControls'),
+                progressContainer: document.getElementById('progressContainer'),
+                progressFill: document.getElementById('progressFill'),
+                progressText: document.getElementById('progressText'),
+                canvasArea: document.getElementById('canvasArea'),
+                canvasContainer: document.getElementById('canvasContainer')
+            };
+
+            // ========== TOOL DEFINITIONS ==========
+            const photoTools = [
+                { icon: '📤', label: 'Upload', action: 'upload' },
+                { icon: '✂️', label: 'Crop', action: 'crop' },
+                { icon: '🔄', label: 'Rotate', action: 'rotate' },
+                { icon: '🔲', label: 'Flip', action: 'flip' },
+                { icon: '📝', label: 'Text', action: 'text' },
+                { icon: '🔷', label: 'Shapes', action: 'shapes' },
+                { icon: '🎨', label: 'Filters', action: 'filters' },
+                { icon: '📐', label: 'Resize', action: 'resize' }
+            ];
+
+            const videoTools = [
+                { icon: '📤', label: 'Upload', action: 'upload' },
+                { icon: '✂️', label: 'Trim', action: 'trim' },
+                { icon: '📝', label: 'Text', action: 'text' },
+                { icon: '🎨', label: 'Filters', action: 'filters' }
+            ];
+
+            // ========== INITIALIZATION ==========
+            function init() {
+                // Apply dark mode
+                if (state.isDarkMode) {
+                    document.body.classList.add('dark');
+                    elements.themeText.textContent = 'Light Mode';
+                }
+
+                // Initialize Fabric.js canvas
+                state.fabricCanvas = new fabric.Canvas('photo-canvas', {
+                    width: 800,
+                    height: 600,
+                    backgroundColor: 'transparent'
+                });
+
+                // Set up event listeners
+                setupEventListeners();
+                
+                // Render tools
+                renderTools();
+                
+                // Save initial state
+                saveHistory();
+            }
+
+            // ========== EVENT LISTENERS ==========
+            function setupEventListeners() {
+                // Editor mode toggle
+                elements.photoModeBtn.addEventListener('click', () => switchEditor('photo'));
+                elements.videoModeBtn.addEventListener('click', () => switchEditor('video'));
+
+                // Theme toggle
+                elements.themeToggleBtn.addEventListener('click', toggleTheme);
+
+                // File uploads
+                elements.photoInput.addEventListener('change', handlePhotoUpload);
+                elements.videoInput.addEventListener('change', handleVideoUpload);
+
+                // Drag and drop
+                elements.canvasArea.addEventListener('dragover', handleDragOver);
+                elements.canvasArea.addEventListener('drop', handleDrop);
+
+                // Zoom controls
+                elements.zoomInBtn.addEventListener('click', () => zoom(1.2));
+                elements.zoomOutBtn.addEventListener('click', () => zoom(0.8));
+                elements.fitScreenBtn.addEventListener('click', fitToScreen);
+
+                // Undo/Redo
+                elements.undoBtn.addEventListener('click', undo);
+                elements.redoBtn.addEventListener('click', redo);
+
+                // Export
+                elements.exportBtn.addEventListener('click', exportContent);
+
+                // Video controls
+                elements.playBtn?.addEventListener('click', () => elements.videoPreview.play());
+                elements.pauseBtn?.addEventListener('click', () => elements.videoPreview.pause());
+
+                // Keyboard shortcuts
+                document.addEventListener('keydown', handleKeyboard);
+            }
+
+            // ========== EDITOR SWITCHING ==========
+            function switchEditor(mode) {
+                state.activeEditor = mode;
+                
+                // Update UI
+                elements.photoModeBtn.classList.toggle('active', mode === 'photo');
+                elements.videoModeBtn.classList.toggle('active', mode === 'video');
+                
+                // Show/hide appropriate canvas
+                elements.photoCanvas.style.display = mode === 'photo' ? 'block' : 'none';
+                elements.videoPreview.style.display = mode === 'video' ? 'block' : 'none';
+                elements.videoControls.style.display = mode === 'video' ? 'flex' : 'none';
+                
+                // Update empty state
+                updateEmptyState();
+                
+                // Render appropriate tools
+                renderTools();
+            }
+
+            // ========== TOOL RENDERING ==========
+            function renderTools() {
+                const tools = state.activeEditor === 'photo' ? photoTools : videoTools;
+                
+                elements.toolsContainer.innerHTML = tools.map(tool => `
+                    <button class="tool-btn" data-action="${tool.action}">
+                        <span class="icon">${tool.icon}</span>
+                        <span class="md:inline">${tool.label}</span>
+                    </button>
+                `).join('');
+                
+                // Add click handlers
+                elements.toolsContainer.querySelectorAll('.tool-btn').forEach(btn => {
+                    btn.addEventListener('click', () => handleToolAction(btn.dataset.action));
+                });
+            }
+
+            // ========== TOOL ACTIONS ==========
+            function handleToolAction(action) {
+                switch(action) {
+                    case 'upload':
+                        if (state.activeEditor === 'photo') {
+                            elements.photoInput.click();
+                        } else {
+                            elements.videoInput.click();
+                        }
+                        break;
+                    case 'crop':
+                        if (state.fabricCanvas) {
+                            const activeObject = state.fabricCanvas.getActiveObject();
+                            if (activeObject) {
+                                // Enable crop mode
+                                state.fabricCanvas.setActiveObject(activeObject);
+                            } else {
+                                alert('Select an object to crop');
+                            }
+                        }
+                        break;
+                    case 'rotate':
+                        if (state.fabricCanvas) {
+                            const activeObject = state.fabricCanvas.getActiveObject();
+                            if (activeObject) {
+                                activeObject.rotate(activeObject.angle + 15);
+                                state.fabricCanvas.renderAll();
+                                saveHistory();
+                            }
+                        }
+                        break;
+                    case 'flip':
+                        if (state.fabricCanvas) {
+                            const activeObject = state.fabricCanvas.getActiveObject();
+                            if (activeObject) {
+                                activeObject.toggle('flipX');
+                                state.fabricCanvas.renderAll();
+                                saveHistory();
+                            }
+                        }
+                        break;
+                    case 'text':
+                        addText();
+                        break;
+                    case 'filters':
+                        applyFilter();
+                        break;
+                    default:
+                        console.log('Tool action:', action);
+                }
+            }
+
+            // ========== PHOTO UPLOAD ==========
+            function handlePhotoUpload(e) {
+                const file = e.target.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        loadImageToCanvas(event.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+
+            function loadImageToCanvas(imageUrl) {
+                fabric.Image.fromURL(imageUrl, (img) => {
+                    // Scale image to fit canvas
+                    const scale = Math.min(
+                        (state.fabricCanvas.width - 40) / img.width,
+                        (state.fabricCanvas.height - 40) / img.height
+                    );
+                    
+                    img.scale(scale);
+                    img.set({
+                        left: state.fabricCanvas.width / 2,
+                        top: state.fabricCanvas.height / 2,
+                        originX: 'center',
+                        originY: 'center'
+                    });
+                    
+                    state.fabricCanvas.clear();
+                    state.fabricCanvas.add(img);
+                    state.fabricCanvas.setActiveObject(img);
+                    state.fabricCanvas.renderAll();
+                    
+                    state.currentImage = imageUrl;
+                    updateEmptyState();
+                    saveHistory();
+                });
+            }
+
+            // ========== VIDEO UPLOAD ==========
+            function handleVideoUpload(e) {
+                const file = e.target.files[0];
+                if (file && file.type.startsWith('video/')) {
+                    const url = URL.createObjectURL(file);
+                    elements.videoPreview.src = url;
+                    state.currentVideo = url;
+                    updateEmptyState();
+                }
+            }
+
+            // ========== TEXT TOOL ==========
+            function addText() {
+                if (!state.fabricCanvas) return;
+                
+                const text = new fabric.IText('Edit this text', {
+                    left: state.fabricCanvas.width / 2,
+                    top: state.fabricCanvas.height / 2,
+                    fontFamily: 'Inter',
+                    fill: state.isDarkMode ? '#ffffff' : '#000000',
+                    fontSize: 40,
+                    originX: 'center',
+                    originY: 'center'
+                });
+                
+                state.fabricCanvas.add(text);
+                state.fabricCanvas.setActiveObject(text);
+                state.fabricCanvas.renderAll();
+                saveHistory();
+            }
+
+            // ========== FILTERS ==========
+            function applyFilter() {
+                if (!state.fabricCanvas) return;
+                
+                const activeObject = state.fabricCanvas.getActiveObject();
+                if (!activeObject) return;
+                
+                // Simple grayscale filter as example
+                if (activeObject.filters) {
+                    const filter = new fabric.Image.filters.Grayscale();
+                    activeObject.filters.push(filter);
+                } else {
+                    activeObject.filters = [new fabric.Image.filters.Grayscale()];
+                }
+                
+                activeObject.applyFilters();
+                state.fabricCanvas.renderAll();
+                saveHistory();
+            }
+
+            // ========== DRAG & DROP ==========
+            function handleDragOver(e) {
+                e.preventDefault();
+                elements.canvasArea.classList.add('drag-over');
+            }
+
+            function handleDrop(e) {
+                e.preventDefault();
+                elements.canvasArea.classList.remove('drag-over');
+                
+                const file = e.dataTransfer.files[0];
+                if (!file) return;
+                
+                if (state.activeEditor === 'photo' && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => loadImageToCanvas(event.target.result);
+                    reader.readAsDataURL(file);
+                } else if (state.activeEditor === 'video' && file.type.startsWith('video/')) {
+                    const url = URL.createObjectURL(file);
+                    elements.videoPreview.src = url;
+                    state.currentVideo = url;
+                    updateEmptyState();
+                }
+            }
+
+            // ========== ZOOM ==========
+            function zoom(factor) {
+                if (state.activeEditor === 'photo' && state.fabricCanvas) {
+                    const zoom = state.fabricCanvas.getZoom() * factor;
+                    state.fabricCanvas.setZoom(zoom);
+                    state.zoomLevel = Math.round(zoom * 100);
+                    elements.zoomLevel.textContent = state.zoomLevel + '%';
+                }
+            }
+
+            function fitToScreen() {
+                if (state.activeEditor === 'photo' && state.fabricCanvas) {
+                    state.fabricCanvas.setZoom(1);
+                    state.zoomLevel = 100;
+                    elements.zoomLevel.textContent = '100%';
+                }
+            }
+
+            // ========== HISTORY (UNDO/REDO) ==========
+            function saveHistory() {
+                if (!state.fabricCanvas) return;
+                
+                const canvasState = JSON.stringify(state.fabricCanvas.toJSON());
+                
+                // Remove any states after current index
+                state.history = state.history.slice(0, state.historyIndex + 1);
+                state.history.push(canvasState);
+                state.historyIndex++;
+                
+                // Limit history size
+                if (state.history.length > 50) {
+                    state.history.shift();
+                    state.historyIndex--;
+                }
+                
+                updateUndoRedoButtons();
+            }
+
+            function undo() {
+                if (state.historyIndex > 0 && state.fabricCanvas) {
+                    state.historyIndex--;
+                    loadHistoryState(state.history[state.historyIndex]);
+                }
+            }
+
+            function redo() {
+                if (state.historyIndex < state.history.length - 1 && state.fabricCanvas) {
+                    state.historyIndex++;
+                    loadHistoryState(state.history[state.historyIndex]);
+                }
+            }
+
+            function loadHistoryState(canvasState) {
+                state.fabricCanvas.loadFromJSON(canvasState, () => {
+                    state.fabricCanvas.renderAll();
+                    updateUndoRedoButtons();
+                });
+            }
+
+            function updateUndoRedoButtons() {
+                elements.undoBtn.disabled = state.historyIndex <= 0;
+                elements.redoBtn.disabled = state.historyIndex >= state.history.length - 1;
+            }
+
+            // ========== EXPORT ==========
+            function exportContent() {
+                if (state.activeEditor === 'photo' && state.currentImage) {
+                    // Export as PNG
+                    const dataURL = state.fabricCanvas.toDataURL({
+                        format: 'png',
+                        quality: 1
+                    });
+                    
+                    const link = document.createElement('a');
+                    link.download = 'edited-image.png';
+                    link.href = dataURL;
+                    link.click();
+                } else if (state.activeEditor === 'video' && state.currentVideo) {
+                    alert('Video export requires FFmpeg.wasm integration (Phase 5)');
+                } else {
+                    alert('No content to export');
+                }
+            }
+
+            // ========== THEME ==========
+            function toggleTheme() {
+                state.isDarkMode = !state.isDarkMode;
+                document.body.classList.toggle('dark', state.isDarkMode);
+                elements.themeText.textContent = state.isDarkMode ? 'Light Mode' : 'Dark Mode';
+                localStorage.setItem('darkMode', state.isDarkMode);
+            }
+
+            // ========== KEYBOARD SHORTCUTS ==========
+            function handleKeyboard(e) {
+                // Ctrl/Cmd + Z: Undo
+                if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+                    e.preventDefault();
+                    undo();
+                }
+                
+                // Ctrl/Cmd + Shift + Z: Redo
+                if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) {
+                    e.preventDefault();
+                    redo();
+                }
+                
+                // Ctrl/Cmd + Y: Redo (alternative)
+                if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+                    e.preventDefault();
+                    redo();
+                }
+                
+                // Delete key: Remove selected object
+                if (e.key === 'Delete' && state.fabricCanvas) {
+                    const activeObject = state.fabricCanvas.getActiveObject();
+                    if (activeObject) {
+                        state.fabricCanvas.remove(activeObject);
+                        state.fabricCanvas.renderAll();
+                        saveHistory();
+                    }
+                }
+            }
+
+            // ========== UTILITY FUNCTIONS ==========
+            function updateEmptyState() {
+                const hasContent = state.activeEditor === 'photo' ? 
+                    state.currentImage : state.currentVideo;
+                elements.emptyState.style.display = hasContent ? 'none' : 'flex';
+            }
+
+            function showProgress(show) {
+                state.isProcessing = show;
+                elements.progressContainer.style.display = show ? 'flex' : 'none';
+            }
+
+            function updateProgress(value) {
+                state.progress = value;
+                elements.progressFill.style.width = value + '%';
+                elements.progressText.textContent = value + '%';
+            }
+
+            // ========== START THE APP ==========
+            init();
+            
+            // Export to window for debugging
+            window.editorState = state;
+            window.editorElements = elements;
+            
+            console.log('✅ EditSuite initialized successfully!');
+            console.log('💡 Tips:');
+            console.log('  - Drag & drop images/videos');
+            console.log('  - Use Ctrl+Z for undo');
+            console.log('  - Toggle dark/light mode');
+            console.log('  - Click on objects to select and edit');
+            
+        })();
+    </script>
+</body>
+</html>
